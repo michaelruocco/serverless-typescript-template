@@ -1,0 +1,14 @@
+[
+    {
+        "id": 1,
+        "name": "Mega Widget",
+        "status": "online",
+        "price": 10.99
+    },
+    {
+        "id": 2,
+        "name": "Fancy Widget",
+        "status": "offline",
+        "price": 15.00
+    }
+]

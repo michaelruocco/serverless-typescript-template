@@ -1,0 +1,75 @@
+service: widget-api
+
+frameworkVersion: '2'
+
+plugins:
+  - serverless-offline
+  - serverless-webpack
+  - serverless-dynamodb-local
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-west-2'}
+  lambdaHashingVersion: 20201221
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    WIDGET_TABLE_NAME: ${self:provider.stage}-widget
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Scan
+            - dynamodb:PutItem
+          Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.WIDGET_TABLE_NAME}"
+
+custom:
+  webpack:
+    includeModules: true
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 5000
+      inMemory: true
+      migrate: true
+      seed: true
+    seed:
+      test:
+        sources:
+          - table: ${self:provider.environment.WIDGET_TABLE_NAME}
+            sources: [./seed/test-widgets.json]
+
+package:
+  individually: true
+
+functions:
+  get-widgets:
+    handler: src/functions/get-widgets-handler.handle
+    description: get all widgets
+    memorySize: 256
+    events:
+      - http:
+          path: /widgets
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    WidgetTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.WIDGET_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+          
